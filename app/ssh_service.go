@@ -15,7 +15,7 @@ type SSHService struct {
 	client *ssh.Client
 }
 
-func NewSSHService(user,password,ipaddr string,port int) *SSHService {
+func NewSSHService(user, password, ipaddr string, port int) *SSHService {
 	config := &ssh.ClientConfig{
 		User:            user,
 		Auth:            []ssh.AuthMethod{ssh.Password(password)},
@@ -23,11 +23,11 @@ func NewSSHService(user,password,ipaddr string,port int) *SSHService {
 	}
 	host := ipaddr + ":" + strconv.Itoa(port)
 	c, err := ssh.Dial("tcp", host, config)
-	ek.CheckError(err,"ssh登录失败")
+	ek.CheckError(err, "ssh登录失败")
 	return &SSHService{client: c}
 }
 
-func (this *SSHService)GetMuxShell(cmd []string) string  {
+func (this *SSHService) GetMuxShell(cmd []string) string {
 	session, err := this.client.NewSession()
 	ek.CheckError(err, "创建shell")
 	defer session.Close()
@@ -61,16 +61,13 @@ func (this *SSHService)GetMuxShell(cmd []string) string  {
 	}
 
 	var buffer bytes.Buffer
-	buffer.WriteString(<-out)
-	for _ , v :=range cmd{
+	for _, v := range cmd {
 		in <- v
+		buffer.WriteString(<-out)
 	}
-	err = session.Wait()
-	ek.CheckError(err,"退出异常")
 
-	for v:=range out{
-		buffer.WriteString(v)
-	}
+	err = session.Wait()
+	ek.CheckError(err, "退出异常")
 	return buffer.String()
 }
 
@@ -95,7 +92,6 @@ func muxShell(w io.Writer, r, e io.Reader) (chan<- string, <-chan string) {
 		for {
 			n, err := r.Read(buf[t:])
 			if err != nil {
-				//fmt.Println("->>>>>>>>>>>>>>>>>>>>>>"+err.Error())
 				close(in)
 				close(out)
 				return
