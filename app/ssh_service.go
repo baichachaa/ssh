@@ -1,7 +1,7 @@
 package app
 
 import (
-	"bytes"
+	"fmt"
 	"golang.org/x/crypto/ssh"
 	"io"
 	"log"
@@ -59,16 +59,19 @@ func (this *SSHService) GetMuxShell(cmd []string) string {
 	if err := session.Shell(); err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println(<-out) //ignore the shell output
+	fmt.Println("--------------------------------------------")
+	in <- "show arp"
+	in <- "show int status"
 
-	var buffer bytes.Buffer
-	for _, v := range cmd {
-		in <- v
-		buffer.WriteString(<-out)
-	}
+	in <- "exit"
+	in <- "exit"
 
-	err = session.Wait()
-	ek.CheckError(err, "退出异常")
-	return buffer.String()
+	fmt.Printf("%s\n%s\n", <-out, <-out)
+
+	_, _ = <-out, <-out
+	session.Wait()
+	return ""
 }
 
 func muxShell(w io.Writer, r, e io.Reader) (chan<- string, <-chan string) {
@@ -79,7 +82,7 @@ func muxShell(w io.Writer, r, e io.Reader) (chan<- string, <-chan string) {
 	go func() {
 		for cmd := range in {
 			wg.Add(1)
-			_, _ = w.Write([]byte(cmd + "\n"))
+			w.Write([]byte(cmd + "\n"))
 			wg.Wait()
 		}
 	}()
@@ -92,6 +95,7 @@ func muxShell(w io.Writer, r, e io.Reader) (chan<- string, <-chan string) {
 		for {
 			n, err := r.Read(buf[t:])
 			if err != nil {
+				fmt.Println(err.Error())
 				close(in)
 				close(out)
 				return

@@ -44,6 +44,6 @@ import (
 
 func main() {
 	s := app.NewSSHService("root", "Linux@11", "baichacha.cn", 22)
-	b := s.GetMuxShell([]string{"ls -l", "cd /usr", "ls -l", "ps -ef", "id", "apt update", "who", "id", "exit"})
+	b := s.GetMuxShell([]string{"id", "exit"})
 	fmt.Println(b)
 }
